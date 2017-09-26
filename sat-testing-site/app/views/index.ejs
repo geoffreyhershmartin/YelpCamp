@@ -1,0 +1,3912 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<title>Crimson Education | SAT test</title>
+	<meta name="description" content="">
+	<meta name="author" content=" Made by Keyners">
+    <meta http-equiv="X-UA-Compatible" content="IE=9" />
+
+  	<link rel="stylesheet" href="css/reset.css">
+	<link rel="stylesheet" href="css/styles.css">
+	<link rel="stylesheet" href="css/skeleton.css">
+
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
+	<script type="text/javascript">
+		
+		var name = "";
+		var surname = "";
+		var email = "";
+		var tutorID = <%=tutorid%>;
+		var userid = <%=userid%>;
+		
+		//All sections become invisible
+		$(document).ready(function(){
+			var curUrl = window.location.href;
+			
+			for (var i = 1; i < 5; i++)
+				$('#section' + i).fadeOut(0);
+			
+			$('#nameerror').fadeOut(0);
+			$('#surnameerror').fadeOut(0);
+			$('#emailerror').fadeOut(0);
+		});
+		
+		//Login submit + checks whether all parameters are not empty
+		$(function(){
+	
+			$('#login').click(function(){
+				$('#nameerror').fadeOut(0);
+				$('#surnameerror').fadeOut(0);
+				$('#emailerror').fadeOut(0);
+				name = $('#name').val();
+				surname = $('#surname').val();
+				email = $('#email').val();
+				var error = false;
+				if (name == "")
+				{
+					$('#nameerror').fadeIn();
+					error = true;
+				}
+				if (surname == "")
+				{
+					$('#surnameerror').fadeIn();
+					error = true;
+				}
+				if (email == "")
+				{
+					$('#emailerror').fadeIn();
+					error = true;
+				}
+				if (error)
+					return;
+				$('#log').fadeOut(0);
+				change(0);
+				startTime = new Date();
+			});
+			return false;
+			
+		});
+		
+		var end = 0;
+		var startTime;
+		
+		//Change the sections and update the timer 
+		function change(x)
+		{
+			var cur = '#section' + x;
+			$(cur).fadeOut(0);
+			var next = '#section' + (x + 1);
+			$(next).fadeIn(0);
+			var today = new Date();
+			if (x == 0)
+			{
+				end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes() + 65, today.getSeconds()).getTime();
+				
+				setTimeout("change(1)", 65 * 60 * 1000);
+			}
+			else if (x == 1)
+			{
+				end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes() + 35, today.getSeconds()).getTime();
+				setTimeout("change(2)", 35 * 50 * 1000);
+			}
+			else if (x == 2)
+			{
+				end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes() + 25, today.getSeconds()).getTime();
+				setTimeout("change(3)", 25 * 60 * 1000);
+			}
+			else if (x == 3)
+			{
+				end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes() + 55, today.getSeconds()).getTime();							setTimeout("send()", 60 * 55 * 1000);
+			}
+			countdown(end);
+			setInterval("countdown(end)", 1000);
+			return false;
+		}
+
+		function countdown(end)
+		{
+			var t = new Date();
+			var dateX = new Date(end-t.getTime());
+			var perDays = 60*60*1000*24;
+			date_to_write = dateX.getUTCHours().toString() + 'h ' + dateX.getMinutes().toString() + 'm ' + dateX.getSeconds().toString() + 's';
+			var result = document.getElementById('timer');
+			result.innerHTML = date_to_write;
+		}
+	
+		
+		//Converting results to JSON and sending it to server via ajax
+		function send()
+		{
+			tojson = {student: {
+					firstName: name, 
+					secondName: surname, 
+					email: email
+					}, 
+					answers: {
+						READING: {}, 
+						WRITING: {}, 
+						MATHNC: {}, 
+						MATHWC: {}
+					}, 
+					testInfo: {
+						date: {
+							day: startTime.getDate(),
+							month: startTime.getMonth(), 
+							year: startTime.getFullYear()
+						}, 
+						time: {
+							hours: startTime.getHours(), 
+							minutes: startTime.getMinutes()
+						},
+						tutorID: tutorID
+					},
+					userID: userid
+				};
+			var names = ['READING', 'WRITING', 'MATHNC', 'MATHWC'];
+			for (var i = 1; i < 5; i++)
+			{
+				if (i == 1) n = 52;
+				if (i == 2) n = 44;
+				if (i == 3) n = 15;
+				if (i == 4) n = 30;
+				for (var j = 1; j <= n; j++)
+				{
+					var temp = $("#section"+i+"Question"+j+" input[type='radio']:checked").val();
+					if (temp == undefined)
+						temp = "Null";
+					else temp = temp.toString();
+					tojson.answers[names[i - 1]][j] = temp;
+				}
+				if (i == 1 || i == 2) m = 0;
+				if (i == 3) m = 5;
+				if (i == 4) m = 8;
+				for (var j = n + 1; j <= n + m; j++)
+				{
+					var temp = $("#section"+i+"Question"+j).val();
+					if (temp == "")
+						temp = "Null";
+					else 
+						var temp = new String(eval(temp));
+
+					tojson.answers[names[i - 1]][j] = temp;
+				}
+			}
+			json = JSON.stringify(tojson);
+			
+			$.ajax({
+				type: "POST",
+				//url: "http://host:8080/send_json",
+				url: "http://crimsontest.org/send_json", 
+				dataType: "json",
+				data: json,
+				success: function(html){
+					
+				}
+			});
+			// alert("Your results have been sent to your e-mail. Thank you!");
+			// window.location = "http://localhost:8080/report/"+userid.toString();
+			window.location = "http://crimsontest.org/report/"+userid.toString();
+			return false;
+		}
+		
+	</script>
+
+	
+</head>
+<body>
+
+	<!-- Header + logo + timer -->
+	<header style="padding-bottom: 20px">			
+		<nav>
+			<div class='container'>
+				<div class='five columns logo'>
+					<img src="img/crims.png" class="logo" />
+				</div>
+
+				<div class='eleven columnss'>
+					<ul class='mainMenu'>
+						<!-- Timer -->
+						<span id="timer"></span>
+					</ul>
+				</div>
+			</div>
+		</nav>
+	</header>
+	
+	<!-- Login Form -->
+	<div class="main">
+	<div class='container' id="log">
+		<div class='sixteen columns'>
+			<form class="contact">
+				<span class="strong left width200"> First Name</span>	
+				<label>
+					<input type="text" id='name' class="answerinput width200">
+				</label>
+				<!-- Error labels are shown only is one of textfields is empty -->
+				<label id="nameerror" class="error">Please, enter your first name</label><br><br><br><br>
+				<span class="strong left width200"> Last Name</span>
+				<label>
+					<input type="text" id='surname' class="answerinput width200">
+				</label>
+				<label id="surnameerror" class="error">Please, enter your last name</label><br><br><br><br>
+				<span class="strong left width200"> Email</span>	
+				<label>
+					<input type="text" id='email' class="answerinput width200">
+				</label>
+				<label id="emailerror" class="error">Please, enter your email address</label><br><br><br><br>
+				<input type='button' value='Start' class="login" id="login">
+			</form>
+		</div>
+	</div>
+
+	
+	<!-- Section 1. There are 55 <div class="five columns"> blocks here, in each block there is a form and a description, each form has its unique id. It is always formatted like section[section_number]Question[question_number]. Important!!! All questions are displayed inline, so if we want to make next consecutive block be situated under previous  we have to put 19th and 36th first (because they will be the first ones in their columns). So, in other words, we are displaying columns by layers--> 
+	<div id="section1">
+		<div class="container">
+			<div class="head">Answer Sheet. Section 1. Reading</div>
+			<div class="five columns">
+				<span class="strong left"> 1.</span>
+				<form id="section1Question1">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 19.</span>
+				<form id="section1Question19">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 36.</span>
+				<form id="section1Question36">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 2.</span>
+				<form id="section1Question2">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 20.</span>
+				<form id="section1Question20">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 37.</span>
+				<form id="section1Question37">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 3.</span>
+				<form id="section1Question3">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 21.</span>
+				<form id="section1Question21">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 38.</span>
+				<form id="section1Question38">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 4.</span>
+				<form id="section1Question4">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 22.</span>
+				<form id="section1Question22">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 39.</span>
+				<form id="section1Question39">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 5.</span>
+				<form id="section1Question5">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 23.</span>
+				<form id="section1Question23">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 40.</span>
+				<form id="section1Question40">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 6.</span>
+				<form id="section1Question6">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 24.</span>
+				<form id="section1Question24">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 41.</span>
+				<form id="section1Question41">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 7.</span>
+				<form id="section1Question7">
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 25.</span>
+				<form id="section1Question25">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 42.</span>
+				<form id="section1Question42">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 8.</span>
+				<form id="section1Question8">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 26.</span>
+				<form id="section1Question26">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 43.</span>
+				<form id="section1Question43">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 9.</span>
+				<form id="section1Question9">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 27.</span>
+				<form id="section1Question27">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 44.</span>
+				<form id="section1Question44">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 10.</span>
+				<form id="section1Question10">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 28.</span>
+				<form id="section1Question28">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 45.</span>
+				<form id="section1Question45">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 11.</span>
+				<form id="section1Question11">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 29.</span>
+				<form id="section1Question29">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 46.</span>
+				<form id="section1Question46">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 12.</span>
+				<form id="section1Question12">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 30.</span>
+				<form id="section1Question30">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 47.</span>
+				<form id="section1Question47">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 13.</span>
+				<form id="section1Question13">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 31.</span>
+				<form id="section1Question31">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 48.</span>
+				<form id="section1Question48">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 14.</span>
+				<form id="section1Question14">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 32.</span>
+				<form id="section1Question32">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 49.</span>
+				<form id="section1Question49">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 15.</span>
+				<form id="section1Question15">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 33.</span>
+				<form id="section1Question33">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 50.</span>
+				<form id="section1Question50">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 16.</span>
+				<form id="section1Question16">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 34.</span>
+				<form id="section1Question34">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 51.</span>
+				<form id="section1Question51">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 17.</span>
+				<form id="section1Question17">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 35.</span>
+				<form id="section1Question35">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns right">
+				<span class="strong left"> 52.</span>
+				<form id="section1Question52">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 18.</span>
+				<form id="section1Question18">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+		</div>
+		<div class="container">
+			<input type="button" class="enter" id="end" value="Next Section" onclick="change(1)"/>
+		</div>
+	</div>
+	
+	<div id="section2">
+		<div class="container">
+			<div class="head">Answer Sheet. Section 2. Writing and Language</div>
+			<div class="five columns">
+				<span class="strong left"> 1.</span>
+				<form id="section2Question1">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 16.</span>
+				<form id="section2Question16">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 31.</span>
+				<form id="section2Question31">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 2.</span>
+				<form id="section2Question2">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 17.</span>
+				<form id="section2Question17">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 32.</span>
+				<form id="section2Question32">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 3.</span>
+				<form id="section2Question3">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div><div class="five columns">
+				<span class="strong left"> 18.</span>
+				<form id="section2Question18">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 33.</span>
+				<form id="section2Question33">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 4.</span>
+				<form id="section2Question4">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 19.</span>
+				<form id="section2Question19">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 34.</span>
+				<form id="section2Question34">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 5.</span>
+				<form id="section2Question5">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 20.</span>
+				<form id="section2Question20">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 35.</span>
+				<form id="section2Question35">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 6.</span>
+				<form id="section2Question6">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 21.</span>
+				<form id="section2Question21">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 36.</span>
+				<form id="section2Question36">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 7.</span>
+				<form id="section2Question7">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 22.</span>
+				<form id="section2Question22">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 37.</span>
+				<form id="section2Question37">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 8.</span>
+				<form id="section2Question8">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 23.</span>
+				<form id="section2Question23">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 38.</span>
+				<form id="section2Question38">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 9.</span>
+				<form id="section2Question9">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 24.</span>
+				<form id="section2Question24">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 39.</span>
+				<form id="section2Question39">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 10.</span>
+				<form id="section2Question10">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 25.</span>
+				<form id="section2Question25">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 40.</span>
+				<form id="section2Question40">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 11.</span>
+				<form id="section2Question11">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 26.</span>
+				<form id="section2Question26">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 41.</span>
+				<form id="section2Question41">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 12.</span>
+				<form id="section2Question12">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 27.</span>
+				<form id="section2Question27">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 42.</span>
+				<form id="section2Question42">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 13.</span>
+				<form id="section2Question13">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 28.</span>
+				<form id="section2Question28">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 43.</span>
+				<form id="section2Question43">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 14.</span>
+				<form id="section2Question14">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 29.</span>
+				<form id="section2Question29">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 44.</span>
+				<form id="section2Question44">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 15.</span>
+				<form id="section2Question15">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 30.</span>
+				<form id="section2Question30">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			
+		</div>
+		<div class="container">
+			<input type="button" class="enter" id="end" value="Next Section" onclick="change(2)"/>
+		</div>
+	</div>
+	
+	<div id="section3">
+		<div class="container">
+			<div class="head">Answer Sheet. Section 3. Math (No Calculator)</div>
+			<div class="five columns">
+				<span class="strong left"> 1.</span>
+				<form id="section3Question1">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 6.</span>
+				<form id="section3Question6">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 11.</span>
+				<form id="section3Question11">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 2.</span>
+				<form id="section3Question2">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 7.</span>
+				<form id="section3Question7">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 12.</span>
+				<form id="section3Question12">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 3.</span>
+				<form id="section3Question3">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div><div class="five columns">
+				<span class="strong left"> 8.</span>
+				<form id="section3Question8">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 13.</span>
+				<form id="section3Question13">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 4.</span>
+				<form id="section3Question4">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 9.</span>
+				<form id="section3Question9">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 14.</span>
+				<form id="section3Question14">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 5.</span>
+				<form id="section3Question5">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 10.</span>
+				<form id="section3Question10">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 15.</span>
+				<form id="section3Question15">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<!-- If we have other type of question, we have the id connected to input field-->
+			<div class="five columns">
+				<span class="strong left"> 16.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section3Question16">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 17.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section3Question17">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 18.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section3Question18">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 19.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section3Question19">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 20.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section3Question20">
+					</label>
+				</form>
+			</div>
+		</div>
+		<div class="container">
+			<input type="button" class="enter" id="end" value="Next Section" onclick="change(3)"/>
+		</div>
+	</div>
+	
+	<div id="section4">
+		<div class="container">
+			<div class="head">Answer Sheet. Section 4. Math (Calculator)</div>
+			<div class="five columns">
+				<span class="strong left"> 1.</span>
+				<form id="section4Question1">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 11.</span>
+				<form id="section4Question11">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 21.</span>
+				<form id="section4Question21">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 2.</span>
+				<form id="section4Question2">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 12.</span>
+				<form id="section4Question12">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 22.</span>
+				<form id="section4Question22">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 3.</span>
+				<form id="section4Question3">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div><div class="five columns">
+				<span class="strong left"> 13.</span>
+				<form id="section4Question13">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 23.</span>
+				<form id="section4Question23">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 4.</span>
+				<form id="section4Question4">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 14.</span>
+				<form id="section4Question14">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 24.</span>
+				<form id="section4Question24">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 5.</span>
+				<form id="section4Question5">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 15.</span>
+				<form id="section4Question15">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 25.</span>
+				<form id="section4Question25">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 6.</span>
+				<form id="section4Question6">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 16.</span>
+				<form id="section4Question16">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 26.</span>
+				<form id="section4Question26">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 7.</span>
+				<form id="section4Question7">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 17.</span>
+				<form id="section4Question17">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 27.</span>
+				<form id="section4Question27">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 8.</span>
+				<form id="section4Question8">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 18.</span>
+				<form id="section4Question18">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 28.</span>
+				<form id="section4Question28">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 9.</span>
+				<form id="section4Question9">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 19.</span>
+				<form id="section4Question19">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 29.</span>
+				<form id="section4Question29">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 10.</span>
+				<form id="section4Question10">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 20.</span>
+				<form id="section4Question20">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 30.</span>
+				<form id="section4Question30">		
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="A">
+						<span class="radio-custom"></span>
+						<span class="label">a</span>
+					</label>
+					<label class="width">
+						<input class="radio" type="radio" name="radio" value="B">
+						<span class="radio-custom"></span>
+	   				 	<span class="label">b</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="C">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">c</span>
+	   				 </label>
+	   				 <label class="width">
+	   				 	<input class="radio" type="radio" name="radio" value="D">
+	   				 	<span class="radio-custom"></span>
+	   				 	<span class="label">d</span>
+	   				 </label>
+				</form>
+			</div>
+			
+			<div class="five columns">
+				<span class="strong left"> 31.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section4Question31">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 32.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section4Question32">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 33.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section4Question33">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 34.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section4Question34">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 35.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section4Question35">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 36.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section4Question36">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 37.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section4Question37">
+					</label>
+				</form>
+			</div>
+			<div class="five columns">
+				<span class="strong left"> 38.</span>
+				<form onsubmit="return false;">		
+					<label class="width">
+						<input type="text" maxlength="4" class="answerinput" id="section4Question38">
+					</label>
+				</form>
+			</div>
+		</div>
+		<div class="container">
+			<input type="button" class="enter" id="end" value="Submit" onclick="send();"/>
+		</div>
+	</div>
+	</div>
+	
+</body>
+</html>
